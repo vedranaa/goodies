@@ -17,15 +17,20 @@ def volslice(vol, i, s):
     return vol[s_xyz].squeeze(axis=i)
 
 
-def volume_slicer(vol, slices):
+def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
+                  title = '', width=600, height=600):
   ''' Visualizes slices from volume.
     vol: a 3D numpy array. 
     slices: list of 3 list containing slice indices in three directions.
          Alternatively, each element of slices may be one of the strings
          'mid', 'ends', 'first' or 'last' or None which is the same as empty.
   '''
-  cmin = vol.min()
-  cmax = vol.max()
+  
+  if cmin is None:
+      cmin = vol.min()
+  if cmax is None:
+      cmax = vol.max()
+      
   dim = vol.shape
 
   for i in range(len(slices)):
@@ -54,7 +59,7 @@ def volume_slicer(vol, slices):
           surf = dict(x=g[2], y=g[1], z=g[0], surfacecolor=volslice(vol, i, s))
           surfs.append(surf)
 
-  common = dict(colorscale='Gray', cmin=cmin, cmax=cmax)
+  common = dict(colorscale=colorscale, cmin=cmin, cmax=cmax)
   surfaces = [go.Surface({**s, **common}) for s in surfs]
 
   # Set limits and aspect ratio.
@@ -63,26 +68,30 @@ def volume_slicer(vol, slices):
               yaxis = dict(range=[-1, dim[1]], autorange=False),
               zaxis = dict(range=[-1, dim[0]], autorange=False), 
               aspectratio = dict(x=dim[2]/d, y=dim[1]/d, z=dim[0]/d))
-  layout = dict(title='Volume', width=600, height=600, scene=scene)
+  layout = dict(title=title, width=width, height=height, scene=scene)
 
   fig = go.Figure(data=surfaces, layout=layout)
   fig.show()
 
 
-def interactive_volume_slicer(vol):
+def interactive_volume_slicer(vol, cmin=None, cmax=None, colorscale='Gray',
+                  title = '', width=600, height=600):
     '''
-    Slow.
-    Inspired by https://plotly.com/python/visualizing-mri-volume-slices/
+    This function is greatly inspired by (basicaly copied from)  
+    https://plotly.com/python/visualizing-mri-volume-slices/.
+    TODO: input to choose slicing direction
     '''
-    cmin = vol.min()
-    cmax = vol.max()
+    if cmin is None:
+        cmin = vol.min()
+    if cmax is None:
+        cmax = vol.max()
     Z, Y, X = vol.shape
 
     o = np.ones((Y, X))
     surfaces = [go.Surface(
         z = z * o,
         surfacecolor = vol[z],
-        colorscale = 'Gray',
+        colorscale = colorscale,
         cmin=cmin, cmax=cmax)
         for z in range(Z)]
 
@@ -154,8 +163,8 @@ def interactive_volume_slicer(vol):
 
     # Layout
     fig.update_layout(
-            title='Slices in volumetric data',
-            width=600, height=600,
+            title=title,
+            width=width, height=height,
             scene=scene_dict,
             updatemenus = [buttons_dict],
             sliders = [slider_dict]
