@@ -5,3 +5,4 @@
 *.pth
 models/checkpoint.pth
 ok_glands_segmentation.py
+*.yaml
