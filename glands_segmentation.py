@@ -123,6 +123,8 @@ trainloader = torch.utils.data.DataLoader(glandTrainData,
                                           batch_size=5,
                                           shuffle=True,
                                           drop_last=True)
+valloader = torch.utils.data.DataLoader(glandValData,
+                                          batch_size=20)
 model = UNet128().to(device)
 loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -132,6 +134,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 # Prepare for bookkeeping.
 epoch_losses = []
 batch_losses = []
+validation_losses = []
 
 # Pick some image to show result on.
 i = 50
@@ -178,27 +181,43 @@ for epoch in range(nr_epochs):
                 'epoch_losses': epoch_losses,
                 'batch_losses': batch_losses}, 
                 outdir + 'checkpoint.pth')
-    if epoch % 10 == 9:
-        # visualization
+    if epoch % 10 == 9: 
+        #  Book-keeping every tenth iterations
         with torch.no_grad():
             lgt = model(im.unsqueeze(0).to(device))
+            batch_loop = tqdm.tqdm(enumerate(valloader), total=len(valloader))
+            val_loss = 0
+            for i, batch in batch_loop:
+                batch_loop.set_description(f'Validating {epoch}/{nr_epochs}')
+                image_batch, label_batch = batch  # unpack the data
+                image_batch = image_batch.to(device)
+                label_batch = label_batch.to(device)
+                logits_batch = model(image_batch)
+                loss = loss_function(logits_batch, label_batch)
+                val_loss += loss.item()
+            validation_losses.append(val_loss / len(valloader))
+                
         prob = torch.nn.Softmax(dim=1)(lgt)
     
         ax_out[ep_iter].imshow(prob[0,1].cpu().detach())
         ax_loss.set_title(f'epoch:{len(epoch_losses) - 1}')
     
         ax_loss.cla()
-        ax_loss.plot(np.linspace(0, len(epoch_losses), len(batch_losses)), batch_losses, lw=0.5)
-        ax_loss.plot(np.arange(len(epoch_losses)) + 0.5, epoch_losses, lw=2, linestyle='dashed', marker='o')
+        ax_loss.plot(np.linspace(0, len(epoch_losses), len(batch_losses)), 
+                     batch_losses, lw=0.5)
+        ax_loss.plot(np.arange(len(epoch_losses)) + 0.5, epoch_losses, 
+                     lw=2, linestyle='dashed', marker='o')
+        ax_loss.plot(np.linspace(9.5, len(epoch_losses)-0.5, len(validation_losses)), 
+                     validation_losses, lw=1, linestyle=':', marker='.')
         ax_loss.set_title('epoch and batch loss')
-        ax_loss.set_ylim(0, max(epoch_losses))
+        ax_loss.set_ylim(0, max(epoch_losses + validation_losses))
         plt.pause(0.00001)  # the only certian way to show the image :-(
         ep_iter += 1
 
 
-#%%
+#%%  Show predictions for one image from the validation set
 
-i = 19#125 % len(glandTrainData)
+i = 19
 im_val, lb_val = glandValData[i]
 with torch.no_grad():
     lgt_val = model(im_val.unsqueeze(0).to(device))

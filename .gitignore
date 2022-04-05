@@ -3,3 +3,4 @@
 # Checkpoints
 .ipynb_checkpoints
 *.pth
+models/checkpoint.pth
