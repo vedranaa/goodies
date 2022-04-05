@@ -10,7 +10,7 @@ import yaml  # for easy handling of local settings
 
 #%% Get local settings
 settings = yaml.load(open('settings.yaml'), Loader=yaml.FullLoader)
-dirin_train = settings['dirin_train']
+datadir = settings['datadir']
 device = settings['device']
 
 
@@ -39,12 +39,12 @@ class GlandData(torch.utils.data.Dataset):
 
 #%% Make training and validan set
 
-glandTrainData = GlandData(dirin_train + 'train_', range(0,600))
-glandValData = GlandData(dirin_train + 'train_', range(600,750))
+glandTrainData = GlandData(datadir + 'train/train_', range(750))
+glandTestData = GlandData(datadir + 'test/test_', range(240))
 
 #%% Check if implementation is Dataset works as expected
 print(len(glandTrainData))
-print(len(glandValData))
+print(len(glandTestData))
 
 N = 10
 fig, ax = plt.subplots(4, N)
@@ -120,21 +120,24 @@ else:
 
 #%%
 trainloader = torch.utils.data.DataLoader(glandTrainData,
-                                          batch_size=5,
+                                          batch_size=10,
                                           shuffle=True,
                                           drop_last=True)
-valloader = torch.utils.data.DataLoader(glandValData,
+testloader = torch.utils.data.DataLoader(glandTestData,
                                           batch_size=20)
 model = UNet128().to(device)
+model.load_state_dict(torch.load(outdir + 'checkpoint_500.pth')['model_statedict'])
+
 loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+optimizer.load_state_dict(torch.load(outdir + 'checkpoint_500.pth')['optimizer_statedict'])
 
 #%% TRAINING
 
 # Prepare for bookkeeping.
 epoch_losses = []
 batch_losses = []
-validation_losses = []
+test_losses = []
 
 # Pick some image to show result on.
 i = 50
@@ -176,17 +179,15 @@ for epoch in range(nr_epochs):
 
     epoch_losses.append(epoch_loss / len(trainloader))
 
-    torch.save({'model_statedict': model.state_dict(),
-                'optimizer_statedict': optimizer.state_dict(),
-                'epoch_losses': epoch_losses,
-                'batch_losses': batch_losses}, 
-                outdir + 'checkpoint.pth')
     if epoch % 10 == 9: 
         #  Book-keeping every tenth iterations
+        torch.save({'model_statedict': model.state_dict(),
+             'optimizer_statedict': optimizer.state_dict()}, 
+             outdir + 'checkpoint.pth')
         with torch.no_grad():
             lgt = model(im.unsqueeze(0).to(device))
-            batch_loop = tqdm.tqdm(enumerate(valloader), total=len(valloader))
-            val_loss = 0
+            batch_loop = tqdm.tqdm(enumerate(testloader), total=len(testloader))
+            test_loss = 0
             for i, batch in batch_loop:
                 batch_loop.set_description(f'Validating {epoch}/{nr_epochs}')
                 image_batch, label_batch = batch  # unpack the data
@@ -194,8 +195,8 @@ for epoch in range(nr_epochs):
                 label_batch = label_batch.to(device)
                 logits_batch = model(image_batch)
                 loss = loss_function(logits_batch, label_batch)
-                val_loss += loss.item()
-            validation_losses.append(val_loss / len(valloader))
+                test_loss += loss.item()
+            test_losses.append(test_loss / len(testloader))
                 
         prob = torch.nn.Softmax(dim=1)(lgt)
     
@@ -207,26 +208,32 @@ for epoch in range(nr_epochs):
                      batch_losses, lw=0.5)
         ax_loss.plot(np.arange(len(epoch_losses)) + 0.5, epoch_losses, 
                      lw=2, linestyle='dashed', marker='o')
-        ax_loss.plot(np.linspace(9.5, len(epoch_losses)-0.5, len(validation_losses)), 
-                     validation_losses, lw=1, linestyle=':', marker='.')
-        ax_loss.set_title('epoch and batch loss')
-        ax_loss.set_ylim(0, max(epoch_losses + validation_losses))
+        ax_loss.plot(np.linspace(9.5, len(epoch_losses)-0.5, len(test_losses)), 
+                     test_losses, lw=1)
+        ax_loss.set_title('epoch loss, batch loss and test loss')
+        ax_loss.set_ylim(0, max(epoch_losses + test_losses))
         plt.pause(0.00001)  # the only certian way to show the image :-(
         ep_iter += 1
 
 
-#%%  Show predictions for one image from the validation set
-
-i = 19
-im_val, lb_val = glandValData[i]
-with torch.no_grad():
-    lgt_val = model(im_val.unsqueeze(0).to(device))
-prob_val = torch.nn.Softmax(dim=1)(lgt_val)
+#%%  Instead of training, you can also load the model
+model.load_state_dict(torch.load(outdir + 'checkpoint_500.pth')['model_statedict'])
+optimizer.load_state_dict(torch.load(outdir + 'checkpoint_500.pth')['optimizer_statedict'])
 
 
-fig, ax = plt.subplots(1, 3)
-ax[0].imshow(im_val.permute(1,2,0))
-ax[1].imshow(lb_val)
-ax[2].imshow(prob_val[0,1].cpu().detach())
+#%%  Show predictions for a few images from the validation set
+
+idxs = [19, 49, 60, 100, 121, 125]
+fig, ax = plt.subplots(3, len(idxs))
+
+for n, idx in enumerate(idxs):
+    im_val, lb_val = glandTestData[idx]
+    with torch.no_grad():
+        lgt_val = model(im_val.unsqueeze(0).to(device))
+    prob_val = torch.nn.Softmax(dim=1)(lgt_val)
+    
+    ax[0, n].imshow(im_val.permute(1,2,0))
+    ax[1, n].imshow(lb_val)
+    ax[2, n].imshow(prob_val[0,1].cpu().detach())
 
 
