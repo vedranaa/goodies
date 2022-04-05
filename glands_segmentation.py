@@ -180,10 +180,10 @@ for epoch in range(nr_epochs):
     if epoch % 10 == 9:
         # visualization
         with torch.no_grad():
-            lgt = model(im.unsqueeze(0)).detach()
+            lgt = model(im.unsqueeze(0).to(device))
         prob = torch.nn.Softmax(dim=1)(lgt)
     
-        ax_out[ep_iter].imshow(prob[0,1])
+        ax_out[ep_iter].imshow(prob[0,1].cpu().detach())
         ax_loss.set_title(f'epoch:{len(epoch_losses) - 1}')
     
         ax_loss.cla()
@@ -200,13 +200,13 @@ for epoch in range(nr_epochs):
 i = 19#125 % len(glandTrainData)
 im_val, lb_val = glandValData[i]
 with torch.no_grad():
-    lgt_val = model(im_val.unsqueeze(0))
+    lgt_val = model(im_val.unsqueeze(0).to(device))
 prob_val = torch.nn.Softmax(dim=1)(lgt_val)
 
 
 fig, ax = plt.subplots(1, 3)
 ax[0].imshow(im_val.permute(1,2,0))
 ax[1].imshow(lb_val)
-ax[2].imshow(prob_val[0,1].detach())
+ax[2].imshow(prob_val[0,1].cpu().detach())
 
 
