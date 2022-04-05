@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 import torch
 import skimage.io
 
-import tqdm
-import yaml
+import tqdm  # for nice progress bar
+import yaml  # for easy handling of local settings
 
 
 #%% Get local settings
 settings = yaml.load(open('settings.yaml'), Loader=yaml.FullLoader)
 dirin_train = settings['dirin_train']
 device = settings['device']
+
 
 #%% Dataset class
 
@@ -106,7 +107,7 @@ class UNet128(torch.nn.Module):
 # %% INITIALIZATION
 import os
 lr = 0.0001
-nr_epochs = 50
+nr_epochs = 500
 outdir = 'models/'
 
 if not os.path.isdir(outdir):
