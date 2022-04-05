@@ -132,18 +132,19 @@ optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 epoch_losses = []
 batch_losses = []
 
-nr_epochs_disp = nr_epochs/10
-d1 = int(np.ceil(np.sqrt(nr_epochs_disp)))
-d0 = int(np.ceil(nr_epochs_disp / d1))
-fig_out, ax_out = plt.subplots(d0, d1, squeeze=False)
-ax_out = ax_out.ravel()
-
 # Pick some image to show result on.
 i = 50
 im, lb = glandTrainData[i]
 fig_in, ax_in = plt.subplots(1, 2)
 ax_in[0].imshow(im.permute(1,2,0))
 ax_in[1].imshow(lb)
+
+# Prepare to show results.
+nr_epochs_disp = nr_epochs/10
+d1 = int(np.ceil(np.sqrt(nr_epochs_disp)))
+d0 = int(np.ceil(nr_epochs_disp / d1))
+fig_out, ax_out = plt.subplots(d0, d1, squeeze=False)
+ax_out = ax_out.ravel()
 
 
 # Train.
@@ -178,11 +179,11 @@ for epoch in range(nr_epochs):
                 outdir + 'checkpoint.pth')
     if epoch % 10 == 9:
         # visualization
-        lgt = model(im.unsqueeze(0)).detach()
+        with torch.no_grad():
+            lgt = model(im.unsqueeze(0)).detach()
         prob = torch.nn.Softmax(dim=1)(lgt)
     
-        # ax_out[epoch].imshow(prob.squeeze().permute(1, 2, 0))
-        ax_out[ep_iter].imshow(prob.cpu().squeeze()[1])
+        ax_out[ep_iter].imshow(prob[0,1])
         ax_loss.set_title(f'epoch:{len(epoch_losses) - 1}')
     
         ax_loss.cla()
@@ -196,21 +197,16 @@ for epoch in range(nr_epochs):
 
 #%%
 
-
 i = 19#125 % len(glandTrainData)
 im_val, lb_val = glandValData[i]
-im_val = im_val.type(torch.cuda.FloatTensor)
-fig_in, ax_in = plt.subplots(1, 2)
-ax_in[0].imshow(im_val.cpu().numpy().transpose(1,2,0))
-ax_in[1].imshow(lb_val)
-
-lgt_val = model(im_val.unsqueeze(0)).detach()
-
+with torch.no_grad():
+    lgt_val = model(im_val.unsqueeze(0))
 prob_val = torch.nn.Softmax(dim=1)(lgt_val)
 
 
-
-fig, ax = plt.subplots()
-ax.imshow(prob_val.cpu().squeeze()[1])
+fig, ax = plt.subplots(1, 3)
+ax[0].imshow(im_val.permute(1,2,0))
+ax[1].imshow(lb_val)
+ax[2].imshow(prob_val[0,1].detach())
 
 

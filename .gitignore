@@ -2,3 +2,4 @@
 
 # Checkpoints
 .ipynb_checkpoints
+*.pth
