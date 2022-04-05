@@ -2,22 +2,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
-
 import skimage.io
 
 import tqdm
-import time
+import yaml
 
-#%% Data loader
+
+#%% Get local settings
+settings = yaml.load(open('settings.yaml'), Loader=yaml.FullLoader)
+dirin_train = settings['dirin_train']
+device = settings['device']
+
+#%% Dataset class
 
 class GlandData(torch.utils.data.Dataset):
+    '''  Dataset which loads all images for training, validation or testing'''
     def __init__(self, data_dir, im_id, margin_size=20):
         self.images = []
         self.labels = []
         for idx in im_id:
-            self.images.append(torch.tensor(skimage.io.imread(f'{data_dir}train_{idx:03d}.png').transpose(2,0,1)).type(torch.LongTensor)/255)
-            label_im = skimage.io.imread(f'{data_dir}train_{idx:03d}_anno.png')[margin_size:-margin_size, margin_size:-margin_size]/255
-            self.labels.append(torch.tensor(label_im).type(torch.LongTensor))
+            self.images.append(torch.tensor(skimage.io.imread(
+                f'{data_dir}{idx:03d}.png').transpose(2, 0, 1), 
+                dtype=torch.float32)/255)
+            label_im = skimage.io.imread(
+                f'{data_dir}{idx:03d}_anno.png')[
+                margin_size:-margin_size, margin_size:-margin_size]/255
+            self.labels.append(torch.tensor(label_im, dtype=torch.int64))
 
     def __getitem__(self, idx):
         return self.images[idx], self.labels[idx]
@@ -26,29 +36,26 @@ class GlandData(torch.utils.data.Dataset):
         return len(self.images)
 
 
-dirin_train = 'data/train/'
+#%% Make training and validan set
 
-glandTrainData = GlandData(dirin_train, range(0,600))
-glandValData = GlandData(dirin_train, range(600,750))
+glandTrainData = GlandData(dirin_train + 'train_', range(0,600))
+glandValData = GlandData(dirin_train + 'train_', range(600,750))
 
-#%% Check if implementation is correct
-
-im, lab = glandTrainData[50]
-
-fig, ax = plt.subplots(1,2)
-ax[0].imshow(im.numpy().transpose(1,2,0))
-ax[1].imshow(lab)
-
-#%%
-
-for i, im in enumerate(glandTrainData):
-    if (im[0].shape[1]==93):
-        print(i)
-
-#%%
-
+#%% Check if implementation is Dataset works as expected
 print(len(glandTrainData))
 print(len(glandValData))
+
+N = 10
+fig, ax = plt.subplots(4, N)
+for k in range(2):
+
+    rand_idx = np.random.choice(len(glandTrainData), size=N, replace=False)    
+    for n, idx in enumerate(rand_idx):
+        
+        im, lab = glandTrainData[idx]    
+        ax[0+2*k, n].imshow(im.permute(1,2,0))
+        ax[1+2*k, n].imshow(lab)
+        
 
 #%% Model
 
@@ -105,30 +112,25 @@ outdir = 'models/'
 if not os.path.isdir(outdir):
     os.mkdir(outdir)
 
-if torch.cuda.is_available():
+if (device == 'cuda') and (torch.cuda.is_available()):
     device = torch.device("cuda:0")
 else:
     device = torch.device('cpu')
 
+#%%
 trainloader = torch.utils.data.DataLoader(glandTrainData,
                                           batch_size=5,
                                           shuffle=True,
                                           drop_last=True)
 model = UNet128().to(device)
-
 loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-#%%
+
+#%% TRAINING
+
+# Prepare for bookkeeping.
 epoch_losses = []
 batch_losses = []
-epoch_time = []
-
-i = 50#125 % len(glandTrainData)
-im, lb = glandTrainData[i]
-im = im.type(torch.cuda.FloatTensor)
-fig_in, ax_in = plt.subplots(1, 2)
-ax_in[0].imshow(im.cpu().numpy().transpose(1,2,0))
-ax_in[1].imshow(lb)
 
 nr_epochs_disp = nr_epochs/10
 d1 = int(np.ceil(np.sqrt(nr_epochs_disp)))
@@ -136,11 +138,19 @@ d0 = int(np.ceil(nr_epochs_disp / d1))
 fig_out, ax_out = plt.subplots(d0, d1, squeeze=False)
 ax_out = ax_out.ravel()
 
+# Pick some image to show result on.
+i = 50
+im, lb = glandTrainData[i]
+fig_in, ax_in = plt.subplots(1, 2)
+ax_in[0].imshow(im.permute(1,2,0))
+ax_in[1].imshow(lb)
+
+
+# Train.
 fig_loss, ax_loss = plt.subplots()
 ep_iter = 0
 for epoch in range(nr_epochs):
 
-    t = time.time()
     epoch_loss = 0.0
     batch_loop = tqdm.tqdm(enumerate(trainloader), total=len(trainloader))
     for i, batch in batch_loop:
@@ -160,14 +170,12 @@ for epoch in range(nr_epochs):
         batch_losses.append(loss.item())
 
     epoch_losses.append(epoch_loss / len(trainloader))
-    epoch_time.append(time.time() - t)
 
     torch.save({'model_statedict': model.state_dict(),
                 'optimizer_statedict': optimizer.state_dict(),
                 'epoch_losses': epoch_losses,
-                'batch_losses': batch_losses,
-                'epoch_time': epoch_time
-                }, outdir + 'checkpoint.pth')
+                'batch_losses': batch_losses}, 
+                outdir + 'checkpoint.pth')
     if epoch % 10 == 9:
         # visualization
         lgt = model(im.unsqueeze(0)).detach()
