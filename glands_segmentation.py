@@ -107,7 +107,7 @@ class UNet128(torch.nn.Module):
 # %% INITIALIZATION
 import os
 lr = 0.0001
-nr_epochs = 500
+nr_epochs = 50
 outdir = 'models/'
 
 if not os.path.isdir(outdir):
@@ -126,11 +126,9 @@ trainloader = torch.utils.data.DataLoader(glandTrainData,
 testloader = torch.utils.data.DataLoader(glandTestData,
                                           batch_size=20)
 model = UNet128().to(device)
-model.load_state_dict(torch.load(outdir + 'checkpoint_500.pth')['model_statedict'])
 
 loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-optimizer.load_state_dict(torch.load(outdir + 'checkpoint_500.pth')['optimizer_statedict'])
 
 #%% TRAINING
 
