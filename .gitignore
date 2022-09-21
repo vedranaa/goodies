@@ -3,6 +3,7 @@
 # Checkpoints
 .ipynb_checkpoints
 *.pth
+*.pyc
 models/checkpoint.pth
 ok_glands_segmentation.py
 *.yaml
