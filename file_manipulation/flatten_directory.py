@@ -109,12 +109,13 @@ def flatten(foldername, copy_all='all', prefix='', copy=[], skip=[], processed=[
 
 #%%
 
-photos = '/Volumes/Toshiba1/PICTURES/PHOTOS/2002'
-flat = '/Users/vand/Documents/_PHOTOS_FLATTENED/2002'
+photos = '/Volumes/Toshiba1/PICTURES/PHOTOS/2005'
+flat = '/Users/vand/Documents/_PHOTOS_FLATTENED/2005'
 copy, skip, processed = flatten(photos, copy_all='photo')
 
-print([s for s in skip if s[-3:]!='.db'])
-
+#%%
+check = [s for s in skip if s[-3:]!='.db']
+[print(c) for c in check]
 
 #%%
 copy, skip, processed = copy_flattened(photos, flat, copy_all='photo')
