@@ -57,7 +57,7 @@ def copy_flattened(root, destination, copy_all='all', ask_first=False):
     copy, skip, processed = flatten(root, copy_all)
     print(f'Processed {len(processed)} folders.')
     print(f'About to copy {len(copy)} files.')
-    print(f'Skipping {len(skip)} files')
+    print(f'Skipping {len(skip)} files.')
     
     if ask_first and not (input('Proceed? ').lower() in 'yes'):
         print('Aborting')
@@ -109,8 +109,8 @@ def flatten(foldername, copy_all='all', prefix='', copy=[], skip=[], processed=[
 
 #%%
 
-photos = '/Volumes/Toshiba1/PICTURES/PHOTOS/2005'
-flat = '/Users/vand/Documents/_PHOTOS_FLATTENED/2005'
+photos = '/Volumes/Toshiba1/PICTURES/PHOTOS/2006'
+flat = '/Users/vand/Documents/_PHOTOS_FLATTENED/2006'
 copy, skip, processed = flatten(photos, copy_all='photo')
 
 #%%
