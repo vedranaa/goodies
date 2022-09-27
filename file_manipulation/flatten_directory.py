@@ -10,7 +10,20 @@ import os
 import shutil
 
 
-def copy_flattened(root, destination, copy_ext='all', ask_first=False):
+def get_extensions(description):
+    if description == 'all':
+        extensions = True
+    elif description == 'photo':
+        extensions = ['jpeg', 'jpg', 'png', 'gif', 'bmp',
+                    'avi', 'qt', 'mov', 'mp4', 'm4p', 'mpg', 'mpeg']
+    elif description == 'image':
+        extensions = ['jpeg', 'jpg', 'png', 'gif', 'tiff', 'pdf', 'eps']
+    else:
+        extensions = description
+    return extensions
+
+
+def copy_flattened(root, destination, copy_all='all', ask_first=False):
     '''  Copy files from directory tree to destination directory.
 
     Parameters
@@ -19,7 +32,7 @@ def copy_flattened(root, destination, copy_ext='all', ask_first=False):
         Root of the directory tree. Tested only on absolute paths.
     destination : string
         Destination folder. Tested only on absolute paths.
-    copy_ext : string or list of strings
+    copy_all : string or list of strings
         List of extensions to copy, e.g. ['txt', 'png', 'pdf']. 
         If string, 'all' copies all files, 'photo' copies photo and video 
         files, 'image' copies common image files.
@@ -41,17 +54,6 @@ def copy_flattened(root, destination, copy_ext='all', ask_first=False):
     
     # TODO check whether destination exists, make new or abort if not
     
-    if copy_ext == 'all':
-        copy_all = True
-    elif copy_ext == 'photo':
-        copy_all = ['jpeg', 'jpg', 'png', 'gif', 
-                    'avi', 'qt', 'mov', 'mp4', 'm4p', 'mpg', 'mpeg']
-    elif copy_ext == 'image':
-        copy_all = ['jpeg', 'jpg', 'png', 'gif', 'tiff', 'pdf', 'eps']
-    else:
-        copy_all = copy_ext
-        
-
     copy, skip, processed = flatten(root, copy_all)
     print(f'Processed {len(processed)} folders.')
     print(f'About to copy {len(copy)} files.')
@@ -62,28 +64,28 @@ def copy_flattened(root, destination, copy_ext='all', ask_first=False):
     else:
         print('Proceeding with copy.')
         for c in copy:
-            print(c[1])
+            #print(c[1])
             dst = os.path.join(destination, c[1])
             shutil.copyfile(c[0], dst)
     
+    print('Done!')
     return copy, skip, processed
 
 
-def flatten(foldername, copy_all=True, prefix='', copy=[], skip=[], processed=[]):
-    '''
-    copy_all : Either True, or extension, or list of extensions.
-    '''  
+def flatten(foldername, copy_all='all', prefix='', copy=[], skip=[], processed=[]):
+
     processed.append(foldername)    
     files = glob.glob(foldername + '/*')
     L = len(foldername) + 1  # + 1 due to '/' 
-     
+    extensions = get_extensions(copy_all)
+    
     for f in files:
         if os.path.isdir(f):
             copy, skip, processed = flatten(f, copy_all, prefix + '_' + f[L:])
         else:
             fn, ext = os.path.splitext(f)
             # First part evaluates to false if string or list.
-            if  (copy_all==True) or (ext[1:].lower() in copy_all):  
+            if  (extensions==True) or (ext[1:].lower() in extensions):  
                 n = prefix + '_' + f[L:]
                 copy.append((f, n[1:]))
             else:
@@ -92,18 +94,27 @@ def flatten(foldername, copy_all=True, prefix='', copy=[], skip=[], processed=[]
     return copy, skip, processed
 
 
-p = '/Users/VAND/Documents/PROJECTS/goodies/goodies/test_root'
-d = '/Users/VAND/Documents/PROJECTS/goodies/goodies/test_des'
-
-copy, skip, processed = flatten(p)
-print(copy)
+#p = '/Users/VAND/Documents/PROJECTS/goodies/goodies/test_root'
+#d = '/Users/VAND/Documents/PROJECTS/goodies/goodies/test_des'
+#copy, skip, processed = flatten(p)
+#print(copy)
 #copy, skip, processed = copy_flattened(p, d)
 
 
+# photos = '/Volumes/Toshiba1/PICTURES/PHOTOS'
+# a = [f[len(photos)+1:] for f in (sorted(glob.glob(photos+'/*')))]
+# with open('list.txt', 'w') as f:
+#     for l in a:
+#         f.write(l + '\n')
+
+#%%
+
+photos = '/Volumes/Toshiba1/PICTURES/PHOTOS/2002'
+flat = '/Users/vand/Documents/_PHOTOS_FLATTENED/2002'
+copy, skip, processed = flatten(photos, copy_all='photo')
+
+print([s for s in skip if s[-3:]!='.db'])
 
 
-
-
-
-
-
+#%%
+copy, skip, processed = copy_flattened(photos, flat, copy_all='photo')
