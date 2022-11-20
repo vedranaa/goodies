@@ -5,6 +5,8 @@ pip install -e </path/to/folder/containing/setup.py>
 -e stands for editable,  so it will then create a link from the site-packages
 directory to the directory in which the code lives, meaning the latest version
 will be used without need to reinstall.
+
+TODO: requires PyQt5, tifffile, Pillow
 '''
 from setuptools import setup
 
