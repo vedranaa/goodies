@@ -1,7 +1,8 @@
 ## SETUP
 
 - Follow setps from 
-https://lab.compute.dtu.dk/patmjen/hcp_tutorials/-/blob/main/HPC_Python_Guide.md I made changes to `init.sh` file, such that it only installs what I need. 
+https://lab.compute.dtu.dk/patmjen/hcp_tutorials/-/blob/main/HPC_Python_Guide.md  
+Note: I made changes to `init.sh` file, such that it only installs what I need. TODO: add content here. 
 
 - Install modules. I guess this could be avoided if specifying requirenments in setup.
 ```
@@ -10,7 +11,7 @@ pip install tifffile
 pip install Pillow
 pip install imagecodecs
 ```
-- From `https://raw.githubusercontent.com/vedranaa/goodies/main/vis3D` get files `vis3D.py` and `setup.py`. For example using `wget` where -N overwrittes if newer, and -O overwrittes into file. (Update, I made `get_code.sh`.)
+- From `https://raw.githubusercontent.com/vedranaa/goodies/main/vis3D` get files `vis3D.py` and `setup.py`. For example using `wget` where -N overwrittes if newer, and -O overwrittes into file. (Update, I made `get_code.sh`. TODO: add.)
 ```
 wget path/file.py
 wget -N path/file.py
