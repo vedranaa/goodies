@@ -91,13 +91,13 @@ def show_mesh(vertices, faces=None, wireframe=False, surf=True,
     if fig is None:
         fig = go.Figure()
   
-    if surf and faces: 
+    if surf and (faces is not None): 
         fig.add_trace(mesh_surface_plot(vertices, faces))
   
-    if wireframe and faces:        
+    if wireframe and (faces is not None):        
         fig.add_trace(mesh_wireframe_plot(vertices, faces))
   
-    if ((not surf) and (not wireframe)) or (not faces):
+    if ((not surf) and (not wireframe)) or (faces is None):
         fig.add_trace(pointcloud_plot(vertices))
         fig.update_traces(marker_size = 1)
     
