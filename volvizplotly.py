@@ -4,7 +4,8 @@ import plotly.graph_objects as go
 
 # MAIN FUNCTIONS
 
-def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
+def volume_slicer(vol, slices, 
+                cmin=None, cmax=None, colorscale='Gray', showscale=False,
                 fig=None, show=True, title = '', width=600, height=600):
     ''' Visualizes chosen slices from volume.
         
@@ -12,7 +13,8 @@ def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
         slices: list of 3 lists containing slice indices in three directions.
            Alternatively, each of the three elements may be one of the strings
            'mid', 'ends', 'first', 'last' or None (None equals empty).
-        min, cmax and colorscale: values passed to plotly colormapping.
+        min, cmax, colorscale and showscale: values passed to plotly 
+            surface colormap.
         fig: plotly figure, if None new figure will be created.
         show: whether to show figure, if not figure will be returned.
         title, width, height: values passed to ploty layout.
@@ -52,7 +54,8 @@ def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
             surf = dict(x=g[2], y=g[1], z=g[0], surfacecolor=volslice(vol, i, s))
             surfs.append(surf)
 
-    common = dict(colorscale=colorscale, cmin=cmin, cmax=cmax)
+    common = dict(colorscale=colorscale, cmin=cmin, cmax=cmax, 
+                  showscale=showscale)
     surfaces = [go.Surface({**s, **common}) for s in surfs]
 
     # Set limits and aspect ratio.
@@ -76,32 +79,57 @@ def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
         return fig
 
 
-def show_mesh(vertices, faces=None, wireframe=False, surf=True,
-            fig=None, show=True, title = '', width=600, height=600):
+def show_mesh(vertices, faces, **options):
     ''' Show triangle surface mesh in 3d.
         
         vertices and faces: mesh entities as n x 3 numpy arrays
-        wireframe and surf: flags for showing wireframe, surface, or both. If 
-            neither wireframe or surf are chosen, pointcloud is shown. 
         fig: plotly figure, if None new figure will be created.
         show: whether to show figure, if not figure will be returned.
+        show_wireframe and show_surf: flags for showing wireframe and surface. 
+            If neither wireframe or surf are chosen, pointcloud is shown. 
         title, width, height: values passed to ploty layout.
+        Other arguments are:
+            surface_color, surface_opacity,
+            wireframe_color, wireframe_opacity, wireframe_width,
+            points_color, points_opacity, points_size. 
+
+        TODO: add options for layout not being updated, e.g. when the figure
+        already has title, it should not be changed to default empty.    
     '''
+
+    fig = options.get('fig')  # defaults to None
+    show = options.get('show', True)
+    add_wireframe = options.get('add_wireframe', True)
+    add_surface = options.get('add_surface', True)
+    surface_color = options.get('surface_color', 'rgb(0,0,255)')
+    surface_opacity = options.get('surface_opacity', 1)
+    wireframe_color = options.get('wireframe_color', 'rgb(40,40,40)')
+    wireframe_opacity = options.get('wireframe_opacity', 1)
+    wireframe_width = options.get('wireframe_width', 1)
+    points_color = options.get('points_color', 'rgb(0,0,255)')
+    points_opacity = options.get('points_opacity', 1)
+    points_size = options.get('points_size', 1)
+    figure_title = options.get('figure_title', '')
+    figure_width = options.get('figure_width', 600)
+    figure_height = options.get('figure_height', 600)
 
     if fig is None:
         fig = go.Figure()
   
-    if surf and (faces is not None): 
-        fig.add_trace(mesh_surface_plot(vertices, faces))
+    if add_surface and (faces is not None): 
+        fig.add_trace(mesh_surface_plot(vertices, faces, 
+                surface_color, surface_opacity))
   
-    if wireframe and (faces is not None):        
-        fig.add_trace(mesh_wireframe_plot(vertices, faces))
+    if add_wireframe and (faces is not None):        
+        fig.add_trace(mesh_wireframe_plot(vertices, faces, 
+                wireframe_color, wireframe_opacity, wireframe_width))
   
-    if ((not surf) and (not wireframe)) or (faces is None):
-        fig.add_trace(pointcloud_plot(vertices))
-        fig.update_traces(marker_size = 1)
+    if ((not add_surface) and (not add_wireframe)) or (faces is None):
+        fig.add_trace(pointcloud_plot(vertices,
+                points_color, points_opacity, points_size))
     
-    fig.update_layout(title_text=title, height=height, width=width)
+    fig.update_layout(title_text=figure_title, height=figure_height, 
+                      width=figure_width)
     
     if show:
         fig.show()
@@ -124,21 +152,23 @@ def volslice(vol, i, s):
     s_xyz = (slice(None),) * i + (slice(s,s+1),)
     return vol[s_xyz].squeeze(axis=i)
 
-def pointcloud_plot(points):
+def pointcloud_plot(points, color, opacity, size):
 
     gm = go.Scatter3d(z=points[:,0], y=points[:,1], x=points[:,2], 
-                      mode='markers', name='')
+                      mode='markers', name='', 
+                      marker_size=size, color=color, opacity=opacity)
     return gm 
 
 
-def mesh_surface_plot(vertices, faces):
+def mesh_surface_plot(vertices, faces, color, opacity):
 
     gm = go.Mesh3d(z=vertices[:,0], y=vertices[:,1], x=vertices[:,2], 
-            i=faces[:,0], j=faces[:,1], k=faces[:,2])
+            i=faces[:,0], j=faces[:,1], k=faces[:,2],
+            color=color, opacity=opacity)
     return gm
 
 
-def mesh_wireframe_plot(vertices, faces):
+def mesh_wireframe_plot(vertices, faces, color, opacity, width):
     
     Xe = np.concatenate((vertices[faces, 0], np.full((faces.shape[0],1), None)),
                         axis=1).ravel()
@@ -148,7 +178,7 @@ def mesh_wireframe_plot(vertices, faces):
                         axis=1).ravel()
     
     gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='',
-            line=dict(color= 'rgb(40,40,40)', width=1))  
+            line=dict(color=color, width=1, opacity=opacity))  
     
     return gm
 
