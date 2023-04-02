@@ -177,7 +177,7 @@ def mesh_wireframe_plot(vertices, faces, color, opacity, width):
                         axis=1).ravel()
     
     gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='',
-            line=dict(color=color, width=1)  
+            line=dict(color=color, width=1))  
     
     return gm
 
