@@ -90,7 +90,7 @@ def show_mesh(vertices, faces, **options):
         title, width, height: values passed to ploty layout.
         Other arguments are:
             surface_color, surface_opacity,
-            wireframe_color, wireframe_opacity, wireframe_width,
+            wireframe_color, wireframe_width,
             points_color, points_opacity, points_size. 
 
         TODO: add options for layout not being updated, e.g. when the figure
@@ -104,7 +104,6 @@ def show_mesh(vertices, faces, **options):
     surface_color = options.get('surface_color', 'rgb(0,0,255)')
     surface_opacity = options.get('surface_opacity', 1)
     wireframe_color = options.get('wireframe_color', 'rgb(40,40,40)')
-    wireframe_opacity = options.get('wireframe_opacity', 1)
     wireframe_width = options.get('wireframe_width', 1)
     points_color = options.get('points_color', 'rgb(0,0,255)')
     points_opacity = options.get('points_opacity', 1)
@@ -122,7 +121,7 @@ def show_mesh(vertices, faces, **options):
   
     if add_wireframe and (faces is not None):        
         fig.add_trace(mesh_wireframe_plot(vertices, faces, 
-                wireframe_color, wireframe_opacity, wireframe_width))
+                wireframe_color, wireframe_width))
   
     if ((not add_surface) and (not add_wireframe)) or (faces is None):
         fig.add_trace(pointcloud_plot(vertices,
@@ -178,7 +177,7 @@ def mesh_wireframe_plot(vertices, faces, color, opacity, width):
                         axis=1).ravel()
     
     gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='',
-            line=dict(color=color, width=1, opacity=opacity))  
+            line=dict(color=color, width=1)  
     
     return gm
 
