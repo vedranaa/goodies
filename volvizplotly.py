@@ -104,6 +104,7 @@ def show_mesh(vertices, faces, **options):
     surface_color = options.get('surface_color', 'rgb(0,0,255)')
     surface_opacity = options.get('surface_opacity', 1)
     wireframe_color = options.get('wireframe_color', 'rgb(40,40,40)')
+    wireframe_opacity = options.get('wireframe_opacity', 1)
     wireframe_width = options.get('wireframe_width', 1)
     points_color = options.get('points_color', 'rgb(0,0,255)')
     points_opacity = options.get('points_opacity', 1)
@@ -121,7 +122,7 @@ def show_mesh(vertices, faces, **options):
   
     if add_wireframe and (faces is not None):        
         fig.add_trace(mesh_wireframe_plot(vertices, faces, 
-                wireframe_color, wireframe_width))
+                wireframe_color, wireframe_opacity, wireframe_width))
   
     if ((not add_surface) and (not add_wireframe)) or (faces is None):
         fig.add_trace(pointcloud_plot(vertices,
@@ -154,17 +155,9 @@ def volslice(vol, i, s):
 def pointcloud_plot(points, color, opacity, size):
 
     gm = go.Scatter3d(z=points[:,0], y=points[:,1], x=points[:,2], 
-                      mode='markers', name='', 
-                      marker_size=size, color=color, opacity=opacity)
+            mode='markers', name='', opacity=opacity,
+            marker=dict(color=color, size=size)) 
     return gm 
-
-
-def mesh_surface_plot(vertices, faces, color, opacity):
-
-    gm = go.Mesh3d(z=vertices[:,0], y=vertices[:,1], x=vertices[:,2], 
-            i=faces[:,0], j=faces[:,1], k=faces[:,2],
-            color=color, opacity=opacity)
-    return gm
 
 
 def mesh_wireframe_plot(vertices, faces, color, opacity, width):
@@ -176,9 +169,17 @@ def mesh_wireframe_plot(vertices, faces, color, opacity, width):
     Ze = np.concatenate((vertices[faces, 2], np.full((faces.shape[0],1), None)),
                         axis=1).ravel()
     
-    gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='',
-            line=dict(color=color, width=1))  
+    gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='', opacity=opacity,
+            line=dict(color=color, width=width))  
     
+    return gm
+
+
+def mesh_surface_plot(vertices, faces, color, opacity):
+
+    gm = go.Mesh3d(z=vertices[:,0], y=vertices[:,1], x=vertices[:,2], 
+            i=faces[:,0], j=faces[:,1], k=faces[:,2],
+            color=color, opacity=opacity)
     return gm
 
    
