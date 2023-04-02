@@ -1,29 +1,22 @@
-# Import data
 import numpy as np
 import plotly.graph_objects as go
 
 
-def grids(dim, i):
-    ''' Returns matrices with coordinates for slicing along axis i. '''
-    two = dim[:i] + dim[i+1:]
-    out = np.mgrid[0:two[0], 0:two[1]]
-    out = np.insert(out, i, np.ones(two), axis=0)
-    return out
-
-
-def volslice(vol, i, s):
-    ''' Returns volume slice s along axis i.'''
-    s_xyz = (slice(None),) * i + (slice(s,s+1),)
-    return vol[s_xyz].squeeze(axis=i)
-
+# MAIN FUNCTIONS
 
 def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
-                  title = '', width=600, height=600):
-    ''' Visualizes slices from volume.
-      vol: a 3D numpy array. 
-      slices: list of 3 list containing slice indices in three directions.
-           Alternatively, each element of slices may be one of the strings
-           'mid', 'ends', 'first' or 'last' or None which is the same as empty.
+                fig=None, show=True, title = '', width=600, height=600):
+    ''' Visualizes chosen slices from volume.
+        
+        vol: a 3D numpy array. 
+        slices: list of 3 lists containing slice indices in three directions.
+           Alternatively, each of the three elements may be one of the strings
+           'mid', 'ends', 'first', 'last' or None (None equals empty).
+        min, cmax and colorscale: values passed to plotly colormapping.
+        fig: plotly figure, if None new figure will be created.
+        show: whether to show figure, if not figure will be returned.
+        title, width, height: values passed to ploty layout.
+
     '''
   
     if cmin is None:
@@ -70,12 +63,97 @@ def volume_slicer(vol, slices, cmin=None, cmax=None, colorscale='Gray',
             aspectratio = dict(x=dim[2]/d, y=dim[1]/d, z=dim[0]/d))
     layout = dict(title=title, width=width, height=height, scene=scene)
 
-    fig = go.Figure()
+    if fig is None:
+        fig = go.Figure()
+    
     fig.add_traces(surfaces)
     fig.update_layout(layout)  
-    # fig = go.Figure(data=surfaces, layout=layout)
-    fig.show()
+    
+    if show:
+        fig.show()
+        return
+    else:
+        return fig
 
+
+def show_mesh(vertices, faces=None, wireframe=False, surf=True,
+            fig=None, show=True, title = '', width=600, height=600):
+    ''' Show triangle surface mesh in 3d.
+        
+        vertices and faces: mesh entities as n x 3 numpy arrays
+        wireframe and surf: flags for showing wireframe, surface, or both. If 
+            neither wireframe or surf are chosen, pointcloud is shown. 
+        fig: plotly figure, if None new figure will be created.
+        show: whether to show figure, if not figure will be returned.
+        title, width, height: values passed to ploty layout.
+    '''
+
+    if fig is None:
+        fig = go.Figure()
+  
+    if surf and faces: 
+        fig.add_trace(mesh_surface_plot(vertices, faces))
+  
+    if wireframe and faces:        
+        fig.add_trace(mesh_wireframe_plot(vertices, faces))
+  
+    if ((not surf) and (not wireframe)) or (not faces):
+        fig.add_trace(pointcloud_plot(vertices))
+        fig.update_traces(marker_size = 1)
+    
+    fig.update_layout(title_text=title, height=height, width=width)
+    
+    if show:
+        fig.show()
+        return
+    else:
+        return fig
+
+# Helping functions
+
+def grids(dim, i):
+    ''' Returns matrices with coordinates for slicing along axis i. '''
+    two = dim[:i] + dim[i+1:]
+    out = np.mgrid[0:two[0], 0:two[1]]
+    out = np.insert(out, i, np.ones(two), axis=0)
+    return out
+
+
+def volslice(vol, i, s):
+    ''' Returns volume slice s along axis i.'''
+    s_xyz = (slice(None),) * i + (slice(s,s+1),)
+    return vol[s_xyz].squeeze(axis=i)
+
+def pointcloud_plot(points):
+
+    gm = go.Scatter3d(z=points[:,0], y=points[:,1], x=points[:,2], 
+                      mode='markers', name='')
+    return gm 
+
+
+def mesh_surface_plot(vertices, faces):
+
+    gm = go.Mesh3d(z=vertices[:,0], y=vertices[:,1], x=vertices[:,2], 
+            i=faces[:,0], j=faces[:,1], k=faces[:,2])
+    return gm
+
+
+def mesh_wireframe_plot(vertices, faces):
+    
+    Xe = np.concatenate((vertices[faces, 0], np.full((faces.shape[0],1), None)),
+                        axis=1).ravel()
+    Ye = np.concatenate((vertices[faces, 1], np.full((faces.shape[0],1), None)),
+                        axis=1).ravel()
+    Ze = np.concatenate((vertices[faces, 2], np.full((faces.shape[0],1), None)),
+                        axis=1).ravel()
+    
+    gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='',
+            line=dict(color= 'rgb(40,40,40)', width=1))  
+    
+    return gm
+
+   
+# EXPERIMENTAL FUCNTIONS
 
 def interactive_volume_slicer(vol, cmin=None, cmax=None, colorscale='Gray',
                   title = '', width=600, height=600):
@@ -173,51 +251,4 @@ def interactive_volume_slicer(vol, cmin=None, cmax=None, colorscale='Gray',
             sliders = [slider_dict]
     )
 
-    fig.show()
-
-
-def pointcloud_plot(points):
-
-    gm = go.Scatter3d(z=points[:,0], y=points[:,1], x=points[:,2], 
-                      mode='markers', name='')
-    return gm 
-
-
-def mesh_surface_plot(vertices, faces):
-
-    gm = go.Mesh3d(z=vertices[:,0], y=vertices[:,1], x=vertices[:,2], 
-            i=faces[:,0], j=faces[:,1], k=faces[:,2])
-    return gm
-
-
-def mesh_wireframe_plot(vertices, faces):
-    
-    Xe = np.concatenate((vertices[faces, 0], np.full((faces.shape[0],1), None)),
-                        axis=1).ravel()
-    Ye = np.concatenate((vertices[faces, 1], np.full((faces.shape[0],1), None)),
-                        axis=1).ravel()
-    Ze = np.concatenate((vertices[faces, 2], np.full((faces.shape[0],1), None)),
-                        axis=1).ravel()
-    
-    gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='',
-            line=dict(color= 'rgb(40,40,40)', width=1))  
-    
-    return gm
-
-
-def show_mesh(vertices, faces=None, wireframe=False, surf=True):
-
-    fig = go.Figure()
-  
-    if surf and faces: 
-        fig.add_trace(mesh_surface_plot(vertices, faces))
-  
-    if wireframe and faces:        
-        fig.add_trace(mesh_wireframe_plot(vertices, faces))
-  
-    if ((not surf) and (not wireframe)) or (not faces):
-        fig.add_trace(pointcloud_plot(vertices))
-        fig.update_traces(marker_size = 1)
-    #fig.update_layout(title_text='Mesh', height=600, width=600)
-  
     fig.show()
