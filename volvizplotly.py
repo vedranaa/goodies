@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 # MAIN FUNCTIONS
 
 def volume_slicer(vol, slices, 
-                cmin=None, cmax=None, colorscale='Gray', showscale=False,
+                cmin=None, cmax=None, colorscale='Gray', show_scale=False,
                 fig=None, show=True, title = '', width=600, height=600):
     ''' Visualizes chosen slices from volume.
         
@@ -55,7 +55,7 @@ def volume_slicer(vol, slices,
             surfs.append(surf)
 
     common = dict(colorscale=colorscale, cmin=cmin, cmax=cmax, 
-                  showscale=showscale)
+                  showscale=show_scale)
     surfaces = [go.Surface({**s, **common}) for s in surfs]
 
     # Set limits and aspect ratio.
@@ -137,6 +137,50 @@ def show_mesh(vertices, faces, **options):
         return
     else:
         return fig
+    
+
+def show_tet_wireframe(vertices, elems, **options):
+    ''' Show tet mesh as wireframe in 3d.
+        
+        vertices and faces: mesh entities as n x 3 numpy arrays
+        fig: plotly figure, if None new figure will be created.
+        show: whether to show figure, if not figure will be returned.
+        show_wireframe and show_surf: flags for showing wireframe and surface. 
+            If neither wireframe or surf are chosen, pointcloud is shown. 
+        title, width, height: values passed to ploty layout.
+        Other arguments are:
+            surface_color, surface_opacity,
+            wireframe_color, wireframe_width,
+            points_color, points_opacity, points_size. 
+
+        TODO: add options for layout not being updated, e.g. when the figure
+        already has title, it should not be changed to default empty.    
+    '''
+
+    fig = options.get('fig')  # defaults to None
+    show = options.get('show', True)
+    wireframe_color = options.get('wireframe_color', 'rgb(40,40,40)')
+    wireframe_opacity = options.get('wireframe_opacity', 1)
+    wireframe_width = options.get('wireframe_width', 1)
+    figure_title = options.get('figure_title', '')
+    figure_width = options.get('figure_width', 600)
+    figure_height = options.get('figure_height', 600)
+    show_legend = options.get('show_legend', False)
+
+    if fig is None:
+        fig = go.Figure()
+  
+    fig.add_trace(mesh_wireframe_plot(vertices, elems, 
+            wireframe_color, wireframe_opacity, wireframe_width))
+  
+    fig.update_layout(title_text = figure_title, height = figure_height, 
+                      width = figure_width, showlegend = show_legend)
+    
+    if show:
+        fig.show()
+        return
+    else:
+        return fig
 
 # Helping functions
 
@@ -162,7 +206,8 @@ def pointcloud_plot(points, color, opacity, size):
 
 
 def mesh_wireframe_plot(vertices, faces, color, opacity, width):
-    
+
+    faces = faces[:, [0, 1, 2, 0]]  # closed triangle
     Xe = np.concatenate((vertices[faces, 0], np.full((faces.shape[0],1), None)),
                         axis=1).ravel()
     Ye = np.concatenate((vertices[faces, 1], np.full((faces.shape[0],1), None)),
