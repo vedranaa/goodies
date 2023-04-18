@@ -112,6 +112,7 @@ def show_mesh(vertices, faces, **options):
     figure_title = options.get('figure_title', '')
     figure_width = options.get('figure_width', 600)
     figure_height = options.get('figure_height', 600)
+    show_legend = options.get('show_legend', False)
 
     if fig is None:
         fig = go.Figure()
@@ -128,8 +129,8 @@ def show_mesh(vertices, faces, **options):
         fig.add_trace(pointcloud_plot(vertices,
                 points_color, points_opacity, points_size))
     
-    fig.update_layout(title_text=figure_title, height=figure_height, 
-                      width=figure_width)
+    fig.update_layout(title_text = figure_title, height = figure_height, 
+                      width = figure_width, showlegend = show_legend)
     
     if show:
         fig.show()
