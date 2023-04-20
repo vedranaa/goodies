@@ -85,9 +85,11 @@ def show_mesh(vertices, faces, **options):
         vertices and faces: mesh entities as n x 3 numpy arrays
         fig: plotly figure, if None new figure will be created.
         show: whether to show figure, if not figure will be returned.
-        show_wireframe and show_surf: flags for showing wireframe and surface. 
+        add_wireframe and add_surf: flags for showing wireframe and surface. 
             If neither wireframe or surf are chosen, pointcloud is shown. 
         title, width, height: values passed to ploty layout.
+        Exeptionally, if only wireframe is requestet, also tet meshes may
+        be processed.
         Other arguments are:
             surface_color, surface_opacity,
             wireframe_color, wireframe_width,
@@ -139,49 +141,6 @@ def show_mesh(vertices, faces, **options):
         return fig
     
 
-def show_tet_wireframe(vertices, elems, **options):
-    ''' Show tet mesh as wireframe in 3d.
-        
-        vertices and faces: mesh entities as n x 3 numpy arrays
-        fig: plotly figure, if None new figure will be created.
-        show: whether to show figure, if not figure will be returned.
-        show_wireframe and show_surf: flags for showing wireframe and surface. 
-            If neither wireframe or surf are chosen, pointcloud is shown. 
-        title, width, height: values passed to ploty layout.
-        Other arguments are:
-            surface_color, surface_opacity,
-            wireframe_color, wireframe_width,
-            points_color, points_opacity, points_size. 
-
-        TODO: add options for layout not being updated, e.g. when the figure
-        already has title, it should not be changed to default empty.    
-    '''
-
-    fig = options.get('fig')  # defaults to None
-    show = options.get('show', True)
-    wireframe_color = options.get('wireframe_color', 'rgb(40,40,40)')
-    wireframe_opacity = options.get('wireframe_opacity', 1)
-    wireframe_width = options.get('wireframe_width', 1)
-    figure_title = options.get('figure_title', '')
-    figure_width = options.get('figure_width', 600)
-    figure_height = options.get('figure_height', 600)
-    show_legend = options.get('show_legend', False)
-
-    if fig is None:
-        fig = go.Figure()
-  
-    fig.add_trace(mesh_wireframe_plot(vertices, elems, 
-            wireframe_color, wireframe_opacity, wireframe_width))
-  
-    fig.update_layout(title_text = figure_title, height = figure_height, 
-                      width = figure_width, showlegend = show_legend)
-    
-    if show:
-        fig.show()
-        return
-    else:
-        return fig
-
 # Helping functions
 
 def grids(dim, i):
@@ -207,13 +166,19 @@ def pointcloud_plot(points, color, opacity, size):
 
 def mesh_wireframe_plot(vertices, faces, color, opacity, width):
 
-    faces = faces[:, [0, 1, 2, 0]]  # closed triangle
-    Xe = np.concatenate((vertices[faces, 0], np.full((faces.shape[0],1), None)),
-                        axis=1).ravel()
-    Ye = np.concatenate((vertices[faces, 1], np.full((faces.shape[0],1), None)),
-                        axis=1).ravel()
-    Ze = np.concatenate((vertices[faces, 2], np.full((faces.shape[0],1), None)),
-                        axis=1).ravel()
+    if faces.shape[1]==3:
+        links = [(0, 1), (1, 2), (2, 0)]
+    elif faces.shape==4:  # only for wireframe, support for tet meshes
+        links = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
+
+    lines = np.vstack([faces[:, [l[0], l[1]]] for l in links])
+    lines = np.sort(lines, axis=1)
+    lines = np.unique(lines, axis=0)
+
+    n = lines.shape[0]
+    Xe = np.hstack((vertices[lines, 0], np.full((n, 1), None))).ravel()
+    Ye = np.hstack((vertices[lines, 1], np.full((n, 1), None))).ravel()
+    Ze = np.hstack((vertices[lines, 2], np.full((n, 1), None))).ravel()
     
     gm = go.Scatter3d(z=Xe, y=Ye, x=Ze, mode='lines', name='', opacity=opacity,
             line=dict(color=color, width=width))  
