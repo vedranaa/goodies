@@ -168,7 +168,7 @@ def mesh_wireframe_plot(vertices, faces, color, opacity, width):
 
     if faces.shape[1]==3:
         links = [(0, 1), (1, 2), (2, 0)]
-    elif faces.shape==4:  # only for wireframe, support for tet meshes
+    elif faces.shape[1]==4:  # only for wireframe, support for tet meshes
         links = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
 
     lines = np.vstack([faces[:, [l[0], l[1]]] for l in links])
