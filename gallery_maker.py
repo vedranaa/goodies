@@ -6,6 +6,11 @@ Read help text for two functions:
     make_gallery,
     fix_images (use of this function is optional).
 And look at the example use below.
+
+In fix_images, converting pdf images is done using pdf2image, which is a wrapper 
+around poppler. Poppler may be installed using:
+conda install -c conda-forge poppler
+
 '''
 
 #%%
@@ -64,7 +69,9 @@ def make_gallery(photos_folder, nr_columns=4, clickable=True,
         f.write('\n'.join(lines) + '\n')
 
 
-def fix_images(folder_in, folder_out, max_size=2000, to_ext='.png', name_as='image'):
+def fix_images(folder_in, folder_out, max_size=2000, 
+               from_ext = ['.jpeg', '.jpg', '.png', '.gif'], to_ext='.png', 
+               name_as='image'):
     '''
     Processes all images in folder_in and saves in folder_out.
 
@@ -72,24 +79,41 @@ def fix_images(folder_in, folder_out, max_size=2000, to_ext='.png', name_as='ima
         folder_out: a path to a folder where images are to be saved. Needs to be 
             made beforehand (outside this function).
         max_size: int or None. Maximal size of (any) image side.
+        from_ext: list of strings or a single string. Extensions considered. 
         to_ext: string or None. Extension used when saving. If None, the 
             original extension is used. 
         name_as: string or None. The root of the image names if images are to be 
             renamed. If None, the original name is used.
+        
+        TODO Test whether all extensions to and from are supported
     '''
 
-    # TODO Test whether all extensions are supported by PIL
-    extensions = ['.jpeg', '.jpg', '.png', '.gif']  
+    # Support from only one ext to be considered given as string
+    if type(from_ext) is str:
+        from_ext = [from_ext]
+    
+    from_ext = [e.lower() for e in from_ext]
+
+    if '.pdf' in from_ext:
+        from pdf2image import convert_from_path
+
     files = os.listdir(folder_in)
-    images = [f for f in files if os.path.splitext(f)[1].lower() in extensions]
+    images = [f for f in files if os.path.splitext(f)[1].lower() in from_ext]
     images = sorted(images)
+
+    if len(images)==0:
+        print('No images found!')
 
     for nr, image in enumerate(images):
 
         print(f'Processing image nr {nr}: {image}')
         name, ext = os.path.splitext(os.path.split(image)[1])
 
-        I = PIL.Image.open(os.path.join(folder_in, image))
+        if ext == '.pdf':
+            # Takes only first page
+            I = convert_from_path(os.path.join(folder_in, image))[0]  
+        else:
+            I = PIL.Image.open(os.path.join(folder_in, image))
         if max_size is not None:
             s = I.size
             I = I.resize([int(max_size * x / max(s)) for x in s])
@@ -98,13 +122,15 @@ def fix_images(folder_in, folder_out, max_size=2000, to_ext='.png', name_as='ima
             print(f'  Name {name} changed to ', end='')
             name = name_as + str(nr).rjust(len(str(len(images))), '0')
             print(name)
+        
         if to_ext is not None:
-            if ext != ext:
+            if ext != to_ext:
                 print(f'  Extension {ext} changed to ', end='')
                 ext = to_ext
                 print(ext)
         
         I.save(os.path.join(folder_out, name) + ext)
+
 
 
 # HELPING FUNCTIONS
@@ -234,5 +260,13 @@ if __name__ == '__main__':
     make_gallery(photos, nr_columns=4, filename='gallery.html')
 
 
+    # %% Use for 02506, spring 2023
+    #photos_in = '/Users/VAND/Documents/TEACHING/02506/02506_2023/posters2023_in'
+    #photos = '/Users/VAND/Documents/TEACHING/02506/02506_2023/posters2023/posters2023'
+    #fix_images(photos_in, photos, from_ext='.pdf', to_ext='.png', name_as='poster')
+    #make_gallery(photos, nr_columns=4, filename='posters2023.html')
+
+
+    
 
 # %%
