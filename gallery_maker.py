@@ -250,6 +250,18 @@ def make_seq():
     
     return seq1, seq2
 
+#%% USED FOR FLATTENING DOWNLOAD FROM DTU LEARN
+# import glob
+# import shutil
+
+# def collect_pdf(folder_in, folder_out):
+
+#     folders = [f for f in os.listdir(folder_in) if os.path.isdir(os.path.join(folder_in, f))]
+#     for i, f in enumerate(folders):
+#         file = glob.glob(os.path.join(folder_in, f) + '/*.pdf')[0]
+#         shutil.copyfile(file, folder_out + '/poster' + str(i) + '.pdf' )
+
+   
 
 #%% Example use
 if __name__ == '__main__':
@@ -266,7 +278,7 @@ if __name__ == '__main__':
     #fix_images(photos_in, photos, from_ext='.pdf', to_ext='.png', name_as='poster')
     #make_gallery(photos, nr_columns=4, filename='posters2023.html')
 
-
+ 
     
 
 # %%
