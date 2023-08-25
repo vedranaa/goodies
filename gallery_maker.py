@@ -1,5 +1,7 @@
 '''
 Make an html file for image gallery by poining to a folder of images.
+Available from 
+https://raw.githubusercontent.com/vedranaa/goodies/main/gallery_maker.py
 
 # HOW TO USE # 
 Read help text for two functions:
@@ -22,7 +24,7 @@ PIL.Image.MAX_IMAGE_PIXELS = None
 def make_gallery(photos_folder, nr_columns=4, clickable=True, 
                  filename='gallery.html',
                  window_title='Gallery', gallery_title='MY GALLERY', 
-                 footer_text='This is my gallery.'):
+                 footer_text='Made by gallery-maker.py.'):
     
     ''' 
     Make an html file for an folder of images.
@@ -31,7 +33,7 @@ def make_gallery(photos_folder, nr_columns=4, clickable=True,
             photos_folder is normally without '/' at the end, and then the htlm 
             document is made in the top folder where photos_folder is placed. If 
             photos_folder has '/' at the end, html document is placed inside the 
-            photos folder.
+            photos_folder.
          nr_columns: integer 1, 2, 3, or 4. Number of columns for the image grid.
          clickable: boolean. Whether clicking on the image yields a true-size
             preview of the image. This is useful when images are (natively)
@@ -265,12 +267,14 @@ def make_seq():
 
 #%% Example use
 if __name__ == '__main__':
-    photos_in = '/Users/VAND/Documents/PROJECTS/goodies/gallery_test/photos_original'
-    photos = '/Users/VAND/Documents/PROJECTS/goodies/gallery_test/photos_processed'
+    # photos_in = '/Users/VAND/Documents/PROJECTS/goodies/gallery_test/photos_original'
+    # photos = '/Users/VAND/Documents/PROJECTS/goodies/gallery_test/photos_processed'
 
-    fix_images(photos_in, photos, to_ext='.jpg')
-    make_gallery(photos, nr_columns=4, filename='gallery.html')
+    #fix_images(photos_in, photos, to_ext='.jpg')
+    # make_gallery(photos, nr_columns=4, filename='gallery.html')
 
+    #fix_images('/Users/VAND/Documents/photographs/02506', '/Users/VAND/Documents/photographs/02506/photos', name_as='poster_session', to_ext='.jpg')
+    
 
     # %% Use for 02506, spring 2023
     #photos_in = '/Users/VAND/Documents/TEACHING/02506/02506_2023/posters2023_in'
@@ -280,5 +284,11 @@ if __name__ == '__main__':
 
  
     
+
+# %%
+    # photos = '/Users/VAND/Documents/TEACHING/_lokaler/processed_photos'
+    # make_gallery(photos, nr_columns=3, filename='gallery.html', clickable=False, 
+    #          window_title='Lokaler', gallery_title='DTU TEACHING ROOMS', 
+    #              footer_text='')
 
 # %%
