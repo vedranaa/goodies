@@ -8,3 +8,4 @@ models/checkpoint.pth
 ok_glands_segmentation.py
 *.yaml
 DEV_trying_vvp.py
+orhtovis_data/*
