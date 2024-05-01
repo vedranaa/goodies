@@ -1,5 +1,5 @@
 '''
-Make an html file for image gallery by poining to a folder of images.
+Make an html file for image gallery by pointing to a folder of images.
 Available from 
 https://raw.githubusercontent.com/vedranaa/goodies/main/gallery_maker.py
 
